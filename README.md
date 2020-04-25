@@ -1,6 +1,5 @@
 # Android ML Kit assignment 
-![GitHub Logo](/images/logo.png)
-Format: ![Alt Text](url)
+![Gif](/gif.gif)
 
 Functionalities:
   - Pick photo from gallery and process tagging on it
