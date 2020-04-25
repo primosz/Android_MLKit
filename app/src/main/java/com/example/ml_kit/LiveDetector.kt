@@ -16,9 +16,7 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata
 import com.google.firebase.ml.vision.objects.FirebaseVisionObjectDetectorOptions
 import com.otaliastudios.cameraview.CameraView
 import com.otaliastudios.cameraview.frame.Frame
-import com.otaliastudios.cameraview.overlay.OverlayLayout
 import kotlinx.android.synthetic.main.activity_live_detector.*
-import java.util.concurrent.ThreadLocalRandom
 
 
 class LiveDetector : AppCompatActivity() {
@@ -29,27 +27,21 @@ class LiveDetector : AppCompatActivity() {
         setContentView(R.layout.activity_live_detector)
 
         val cameraView = findViewById<CameraView>(R.id.camera)
-        val tvDetectedObject = findViewById<TextView>(R.id.tvDetectedItem)
         content = findViewById<ImageView>(R.id.imv)
-
-        cameraView.setLifecycleOwner(this) //Automatically handles the camera lifecycle
-
+        cameraView.setLifecycleOwner(this)
         cameraView.addFrameProcessor {
-            extractDataFromFrame(it) { result ->
-
-
-
+            extractDataFromFrame(it) {
+                Log.println(Log.DEBUG, it, "detecting")
             }
         }
-
     }
 
     private fun extractDataFromFrame(frame: Frame, callback: (String) -> Unit) {
 
         val options = FirebaseVisionObjectDetectorOptions.Builder()
             .setDetectorMode(FirebaseVisionObjectDetectorOptions.STREAM_MODE)
-            .enableMultipleObjects()  //Add this if you want to detect multiple objects at once
-            .enableClassification()  // Add this if you want to classify the detected objects into categories
+            .enableMultipleObjects()
+            .enableClassification()
             .build()
 
         val objectDetector = FirebaseVision.getInstance().getOnDeviceObjectDetector(options)
@@ -57,29 +49,30 @@ class LiveDetector : AppCompatActivity() {
         objectDetector.processImage(getVisionImageFromFrame(frame))
             .addOnSuccessListener {
                     detectedObjects ->
-
                 content.setImageBitmap(Bitmap.createBitmap(content.width, content.height, Bitmap.Config.ARGB_8888 ))
-                tvDetectedItem.text = ""
-                var markedBitmap =
+                val markedBitmap =
                     (content.drawable as BitmapDrawable)
                         .bitmap
                         .copy(Bitmap.Config.ARGB_8888, true)
 
                 val canvas = Canvas(markedBitmap)
                 val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-                tvDetectedItem.setTextColor(Color.BLACK)
                 paint.color = Color.parseColor("#99003399")
+                tvDetectedItem.setTextColor(Color.BLACK)
+                val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+                textPaint.color = Color.WHITE
+                textPaint.textSize = 22.toFloat()
                 detectedObjects.forEach {
                     Log.wtf(it.toString(), "obj")
-                    canvas.drawRect(it.boundingBox, paint)
+                    canvas.drawRoundRect(it.boundingBox.left.toFloat(), it.boundingBox.top.toFloat(), it.boundingBox.right.toFloat(), it.boundingBox.bottom.toFloat(), 16.toFloat(), 16.toFloat(), paint)
+
                     when (it.classificationCategory) {
-                        //Firebase only supports this much categories
-                        0 -> tvDetectedItem.text = tvDetectedItem.text.toString() + "Unknown\n"
-                        1 -> tvDetectedItem.text = tvDetectedItem.text.toString() + "Home good\n"
-                        2 -> tvDetectedItem.text = tvDetectedItem.text.toString() + "Fashion good\n"
-                        3 -> tvDetectedItem.text = tvDetectedItem.text.toString() + "Food\n"
-                        4 -> tvDetectedItem.text = tvDetectedItem.text.toString() + "Place\n"
-                        5 -> tvDetectedItem.text = tvDetectedItem.text.toString() + "Plant\n"
+                        0 -> canvas.drawText("Unknown", 0, 7, it.boundingBox.left.toFloat() +16, it.boundingBox.top.toFloat()+16, textPaint)
+                        1 -> canvas.drawText("Home good", 0, 9, it.boundingBox.left.toFloat() +16, it.boundingBox.top.toFloat()+16, textPaint)
+                        2 -> canvas.drawText("Fashion good", 0, 12, it.boundingBox.left.toFloat() +16, it.boundingBox.top.toFloat()+16, textPaint)
+                        3 -> canvas.drawText("Food", 0, 4, it.boundingBox.left.toFloat() +16, it.boundingBox.top.toFloat()+16, textPaint)
+                        4 -> canvas.drawText("Place", 0, 5, it.boundingBox.left.toFloat() +16, it.boundingBox.top.toFloat()+16, textPaint)
+                        5 -> canvas.drawText("Plant", 0, 5, it.boundingBox.left.toFloat() +16, it.boundingBox.top.toFloat()+16, textPaint)
                     }
                 }
                 content.setImageBitmap(markedBitmap)
@@ -90,10 +83,8 @@ class LiveDetector : AppCompatActivity() {
     }
 
     private fun getVisionImageFromFrame(frame : Frame) : FirebaseVisionImage{
-        //ByteArray for the captured frame
         val data = frame.getData<ByteArray>()
 
-        //Metadata that gives more information on the image that is to be converted to FirebaseVisionImage
         val imageMetaData = FirebaseVisionImageMetadata.Builder()
             .setFormat(FirebaseVisionImageMetadata.IMAGE_FORMAT_NV21)
             .setRotation(FirebaseVisionImageMetadata.ROTATION_90)
@@ -101,9 +92,7 @@ class LiveDetector : AppCompatActivity() {
             .setWidth(frame.size.width)
             .build()
 
-        val image = FirebaseVisionImage.fromByteArray(data, imageMetaData)
-
-        return image
+        return FirebaseVisionImage.fromByteArray(data, imageMetaData)
     }
 
 }

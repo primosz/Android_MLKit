@@ -38,26 +38,26 @@ class MainActivity : AppCompatActivity() {
         tagsTV = findViewById(R.id.label)
         contentIV = findViewById(R.id.imageView)
         tagsWrapper = findViewById(R.id.tagsWrapper)
-        val button = findViewById<Button>(R.id.button)
-        val button2 = findViewById<Button>(R.id.button2)
-        val button3 = findViewById<Button>(R.id.button3)
-        val button4 = findViewById<Button>(R.id.button4)
-        val button5 = findViewById<Button>(R.id.button5)
+        val pickPhotoBtn = findViewById<Button>(R.id.pickPhotoBtn)
+        val takePhotoBtn = findViewById<Button>(R.id.takePhotoBtn)
+        val textReconBtn = findViewById<Button>(R.id.textReconBtn)
+        val objDetectBtn = findViewById<Button>(R.id.objDetectBtn)
+        val liveDetectBtn = findViewById<Button>(R.id.liveDetectBtn)
 
 
-        button.setOnClickListener { view ->
+        pickPhotoBtn.setOnClickListener {
             pickImage()
         }
-        button2.setOnClickListener {view ->
+        takePhotoBtn.setOnClickListener {
             dispatchTakePictureIntent(takePhotoRequestCode)
         }
-        button3.setOnClickListener {view ->
+        textReconBtn.setOnClickListener {
             dispatchTakePictureIntent(takePhotoForRecognitionRequestCode)
         }
-        button4.setOnClickListener {view ->
+        objDetectBtn.setOnClickListener {
             dispatchTakePictureIntent(takePhotoForDetectionRequestCode)
         }
-        button5.setOnClickListener {view ->
+        liveDetectBtn.setOnClickListener {
             val intent = Intent(this, LiveDetector::class.java)
             startActivity(intent)
         }
@@ -67,7 +67,6 @@ class MainActivity : AppCompatActivity() {
             .enableMultipleObjects()
             .enableClassification()
             .build()
-
     }
 
     private fun dispatchTakePictureIntent(code: Int) {
@@ -129,7 +128,7 @@ class MainActivity : AppCompatActivity() {
     private fun processImageTagging(bitmap: Bitmap) {
         this.tagsWrapper.removeAllViews()
         val visionImg = FirebaseVisionImage.fromBitmap(bitmap)
-        val labeler = FirebaseVision.getInstance().getOnDeviceImageLabeler().
+        FirebaseVision.getInstance().onDeviceImageLabeler.
                 processImage(visionImg)
                 .addOnSuccessListener { tags ->
                     tagsTV.text = tags.joinToString(" ") {it.text }
@@ -158,24 +157,28 @@ class MainActivity : AppCompatActivity() {
         val objectDetector = FirebaseVision.getInstance().getOnDeviceObjectDetector(options)
         objectDetector.processImage(visionImg)
             .addOnSuccessListener { detectedObjects ->
-                var markedBitmap =
+                val markedBitmap =
                     (contentIV.drawable as BitmapDrawable)
                         .bitmap
                         .copy(Bitmap.Config.ARGB_8888, true)
+
                 val canvas = Canvas(markedBitmap)
                 val paint = Paint(Paint.ANTI_ALIAS_FLAG)
                 this.tagsWrapper.removeAllViews()
+                var i =0
                 detectedObjects.forEach {
                     val rand = String.format("%06d", ThreadLocalRandom.current().nextInt(1, 1000000))
                     paint.color = Color.parseColor("#99$rand")
-                    canvas.drawRect(it.boundingBox, paint)
+                    canvas.drawRoundRect(it.boundingBox.left.toFloat(), it.boundingBox.top.toFloat(), it.boundingBox.right.toFloat(), it.boundingBox.bottom.toFloat(), 6.toFloat(), 6.toFloat(), paint)
+
                     val lparams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
                     lparams.gravity = Gravity.CENTER_HORIZONTAL
-                    var tv = TextView(this)
+
+                    val tv = TextView(this)
                     tv.layoutParams = lparams
                     tagsTV.text=""
+
                     when (it.classificationCategory) {
-                        //Firebase only supports this much categories
                         0 -> tv.text =  "Unknown\n"
                         1 -> tv.text =   "Home good\n"
                         2 -> tv.text =  "Fashion good\n"
