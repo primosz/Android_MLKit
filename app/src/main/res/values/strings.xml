@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">ML_Kit</string>
+    <string name="image">ML_Kit_image</string>
+    <string name="btn">Pick photo</string>
+    <string name="btn2">Take photo</string>
+    <string name="btn3">Text recognition</string>
+    <string name="btn4">Object detection</string>
+    <string name="btn5">Live detection</string>
+</resources>
